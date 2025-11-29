@@ -1,0 +1,89 @@
+
+# Workflow: SMPL_E2E_MLOPS_GCP_Build_Push_Deploy
+# Prefix Meaning: SMPL_E2E_MLOPS_GCP = Simple End-to-End MLOps on Google Cloud
+# This workflow builds a Docker image, tags it with a timestamp, pushes it to Artifact Registry, and deploys to Cloud Run.
+# Region Guidance:
+#   - us-central1 → Iowa (Central US) [Recommended for general workloads]
+#   - us-east1 → South Carolina (East US)
+#   - us-east4 → Northern Virginia (East US)
+# Choose a region close to your users for lower latency.
+
+name: GCP Build Push Deploy
+
+permissions:
+  contents: write  # Required for pushing Git tags
+
+on:
+  workflow_dispatch: # Manual trigger only
+
+jobs:
+  build-push-deploy:
+    runs-on: ubuntu-latest
+    environment: prod  # Protected environment for security
+
+    steps:
+      # Step 1: Checkout the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history needed for pushing tags
+
+      # Step 2: Generate timestamp tag
+      - name: Generate timestamp tag
+        id: version
+        run: echo "TAG=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
+
+      # Step 3: Authenticate with Google Cloud
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
+
+      # Step 4: Configure Docker for Artifact Registry
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev
+
+      # Step 5: Build Docker image
+      - name: Build Docker image
+        run: |
+          IMAGE_NAME="simple-endtoend-mlops-on-gcp"
+          docker build -f devops/dockerBuild/Dockerfile -t $IMAGE_NAME:${TAG} .
+
+      # Step 6: Tag image for Artifact Registry
+      - name: Tag image for Artifact Registry
+        run: |
+          PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
+          REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
+          REPO_NAME="smpl-e2e-mlops-gcp"
+          IMAGE_NAME="simple-endtoend-mlops-on-gcp"
+          docker tag $IMAGE_NAME:${TAG} $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:${TAG}
+
+      # Step 7: Push image to Artifact Registry
+      - name: Push image to Artifact Registry
+        run: |
+          PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
+          REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
+          REPO_NAME="smpl-e2e-mlops-gcp"
+          IMAGE_NAME="simple-endtoend-mlops-on-gcp"
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:${TAG}
+
+      # Step 8: Deploy to Cloud Run
+      - name: Deploy to Cloud Run
+        run: |
+          PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
+          REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
+          SERVICE_NAME="smpl-e2e-mlops-gcp-service"
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/smpl-e2e-mlops-gcp/simple-endtoend-mlops-on-gcp:${TAG}"
+          gcloud run deploy $SERVICE_NAME \
+            --image $IMAGE \
+            --region $REGION \
+            --platform managed \
+            --allow-unauthenticated
+
+      # Step 9: Tag the codebase in Git
+      - name: Tag the codebase
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag $TAG
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} $TAG
