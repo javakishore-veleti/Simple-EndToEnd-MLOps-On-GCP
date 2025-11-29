@@ -33,3 +33,4 @@ jobs:
       REGION: ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
       IMAGE_NAME: ${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}
       SERVICE_NAME: ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }}
+

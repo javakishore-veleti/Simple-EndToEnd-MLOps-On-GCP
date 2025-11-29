@@ -8,12 +8,6 @@ on:
       image_name:
         required: false
         type: string
-      project_id:
-        required: false
-        type: string
-      region:
-        required: false
-        type: string
       service_name:
         required: false
         type: string
@@ -21,13 +15,13 @@ on:
       GCP_CREDENTIALS:
         required: true
       PROJECT_ID:
-        required: false
+        required: true
       REGION:
-        required: false
+        required: true
       IMAGE_NAME:
-        required: false
+        required: true
       SERVICE_NAME:
-        required: false
+        required: true
 
 jobs:
   deploy-cloud-run:
@@ -43,10 +37,10 @@ jobs:
       - name: Get latest image tag
         id: get-tag
         run: |
-          PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
-          REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
+          PROJECT_ID="${{ secrets.PROJECT_ID }}"
+          REGION="${{ secrets.REGION }}"
           REPO_NAME="smpl-e2e-mlops-gcp"
-          IMAGE_NAME="${{ inputs.image_name || 'simple-endtoend-mlops-on-gcp' }}"
+          IMAGE_NAME="${{ inputs.image_name || secrets.IMAGE_NAME }}"
 
           echo "Fetching latest tag for $IMAGE_NAME..."
           LATEST_TAG=$(gcloud artifacts docker tags list $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME \
@@ -63,10 +57,10 @@ jobs:
 
       - name: Deploy to Cloud Run
         run: |
-          PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
-          REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
-          SERVICE_NAME="${{ inputs.service_name || 'smpl-e2e-mlops-gcp-service' }}"
-          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/smpl-e2e-mlops-gcp/${{ inputs.image_name || 'simple-endtoend-mlops-on-gcp' }}:${LATEST_TAG}"
+          PROJECT_ID="${{ secrets.PROJECT_ID }}"
+          REGION="${{ secrets.REGION }}"
+          SERVICE_NAME="${{ inputs.service_name || secrets.SERVICE_NAME }}"
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/smpl-e2e-mlops-gcp/${{ inputs.image_name || secrets.IMAGE_NAME }}:${LATEST_TAG}"
 
           echo "Deploying latest image: $IMAGE"
           gcloud run deploy $SERVICE_NAME \
