@@ -1,0 +1,9 @@
+pandas
+numpy
+scikit-learn
+Flask
+pytest
+pyarrow
+gunicorn
+google-cloud-bigquery
+overrides
