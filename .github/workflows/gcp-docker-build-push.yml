@@ -19,7 +19,7 @@ on:
 jobs:
   build-push-deploy:
     runs-on: ubuntu-latest
-    environment: prod  # Protected environment for security
+    environment: Google Cloud GCP  # Must match the environment name you created
 
     steps:
       # Step 1: Checkout the repository
