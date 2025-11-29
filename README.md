@@ -2,8 +2,6 @@
 
 This project demonstrates a **production-ready MLOps pipeline** for deploying machine learning models in a **business environment** using **Google Cloud Platform (GCP)**. It provides a scalable, secure, and automated approach for building, versioning, and deploying ML services.
 
----
-
 ## Business Context
 
 Modern enterprises need **reliable ML pipelines** to:
@@ -17,16 +15,12 @@ This solution is designed for:
 - **DevOps Teams**: Standardized deployment process.
 - **Business Stakeholders**: Faster time-to-market for ML products.
 
----
-
 ## Key Capabilities
 - **Containerized ML Application** for portability and reproducibility.
 - **Artifact Registry** for secure image storage and versioning.
 - **Automated CI/CD** using GitHub Actions.
 - **Timestamped Image Naming** for traceability.
 - **Cloud-Native Deployment** (Cloud Run optional).
-
----
 
 ## Architecture Overview
 
@@ -38,8 +32,6 @@ ML Code → Docker Image → Artifact Registry → (Optional) Cloud Run
 - **CI/CD Workflow**: Automates build and push.
 - **Deployment**: Cloud Run or other GCP services.
 
----
-
 ## Prerequisites
 - **Google Cloud Project** with:
   - Artifact Registry enabled.
@@ -50,8 +42,6 @@ ML Code → Docker Image → Artifact Registry → (Optional) Cloud Run
   - `SMPL_E2E_MLOPS_GCP_CREDENTIALS` → Service account JSON key.
   - `SMPL_E2E_MLOPS_GCP_PROJECT_ID` → GCP Project ID.
   - `SMPL_E2E_MLOPS_GCP_REGION` → Artifact Registry region.
-
----
 
 ## Setup Steps
 
@@ -74,7 +64,6 @@ gcloud artifacts repositories create smpl-e2e-mlops-gcp \
   --repository-format=docker \
   --location=us-east1 \
   --project=YOUR_PROJECT_ID
-
 ```
 
 ## CI/CD Workflow Highlights
@@ -100,7 +89,6 @@ Scalability: Deploy across regions with GCP services.
 Security: Artifact Registry with IAM controls.
 Auditability: Timestamped image names for compliance.
 Speed: Automated pipeline reduces manual steps.
-
 
 ### Tech Stack
 
