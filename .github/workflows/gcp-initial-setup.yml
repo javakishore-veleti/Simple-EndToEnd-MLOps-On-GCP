@@ -1,0 +1,63 @@
+
+name: GCP Initial Setup
+
+on:
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  gcp-initial-setup:
+    runs-on: ubuntu-latest
+    environment: Google Cloud Admin
+
+    steps:
+      # Step 1: Authenticate with Google Cloud using ADMIN account
+      - name: Authenticate to Google Cloud (Admin)
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.GCP_ADMIN_CREDENTIALS }}
+
+      # Step 2: Enable required GCP APIs
+      - name: Enable GCP APIs
+        run: |
+          PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
+          echo "Enabling required APIs for project $PROJECT_ID..."
+          gcloud services enable \
+            artifactregistry.googleapis.com \
+            run.googleapis.com \
+            cloudbuild.googleapis.com \
+            aiplatform.googleapis.com \
+            bigquery.googleapis.com \
+            clouddeploy.googleapis.com \
+            container.googleapis.com \
+            logging.googleapis.com \
+            monitoring.googleapis.com \
+            --project $PROJECT_ID
+          echo "APIs enabled successfully."
+
+      # Step 3: Grant IAM roles to CI/CD service account
+      - name: Grant IAM Roles
+        run: |
+          PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
+          SERVICE_ACCOUNT="e2e-mlops-service-account@${PROJECT_ID}.iam.gserviceaccount.com"
+
+          echo "Granting IAM roles to $SERVICE_ACCOUNT..."
+          ROLES=(
+            roles/aiplatform.admin
+            roles/artifactregistry.admin
+            roles/artifactregistry.repoAdmin
+            roles/bigquery.admin
+            roles/cloudbuild.connectionAdmin
+            roles/clouddeploy.admin
+            roles/container.admin
+            roles/container.clusterAdmin
+            roles/storage.objectAdmin
+          )
+
+          for ROLE in "${ROLES[@]}"; do
+            echo "Assigning $ROLE..."
+            gcloud projects add-iam-policy-binding $PROJECT_ID \
+              --member="serviceAccount:$SERVICE_ACCOUNT" \
+              --role="$ROLE"
+          done
+
+          echo "All roles assigned successfully."
