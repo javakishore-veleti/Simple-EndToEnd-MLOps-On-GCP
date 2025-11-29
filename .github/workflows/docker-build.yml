@@ -1,8 +1,12 @@
 
-name: Manual Docker Build
+# Workflow: SMPL_E2E_MLOPS_GCP_Manual_Docker_Build
+# Prefix Meaning: SMPL_E2E_MLOPS_GCP = Simple End-to-End MLOps on Google Cloud
+# This workflow builds a Docker image, tags it with a timestamp, uploads it as an artifact, and creates a Git tag.
+
+name: SMPL_E2E_MLOPS_GCP_Manual_Docker_Build
 
 permissions:
-  contents: write  # Required for pushing tags
+  contents: write  # Required for pushing Git tags
 
 on:
   workflow_dispatch: # Manual trigger only
@@ -10,32 +14,39 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: prod  # Protected environment
+    environment: prod  # Protected environment for security
 
     steps:
+      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Needed to push tags
+          fetch-depth: 0 # Full history needed for pushing tags
 
+      # Step 2: Generate a timestamp-based tag (format: YYYY-MM-DD-HH-MM-SS)
       - name: Generate timestamp tag
         id: version
         run: echo "TAG=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
 
+      # Step 3: Build Docker image with timestamp tag
       - name: Build Docker image
         run: |
           IMAGE_NAME="simple-endtoend-mlops-on-gcp"
           docker build -f devops/dockerBuild/Dockerfile -t $IMAGE_NAME:${TAG} .
 
+      # Step 4: Save Docker image as a compressed artifact
       - name: Save image as artifact
         run: docker save simple-endtoend-mlops-on-gcp:${TAG} | gzip > simple-endtoend-mlops-on-gcp-${TAG}.tar.gz
 
+
+      # Step 5: Upload artifact using latest version of upload-artifact action
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: docker-image-${{ env.TAG }}
+          name: SMPL_E2E_MLOPS_GCP_docker-image-${{ env.TAG }}
           path: simple-endtoend-mlops-on-gcp-${{ env.TAG }}.tar.gz
 
+      # Step 6: Tag the codebase in Git and push the tag to the remote repository
       - name: Tag the codebase
         run: |
           git config user.name "github-actions"
