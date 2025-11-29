@@ -1,0 +1,17 @@
+
+name: Docker + GCP E2E All Workflows
+
+on:
+  workflow_dispatch:
+
+jobs:
+  docker-build:
+    uses: ./.github/workflows/docker-build.yml
+
+  gcp-docker-build-push:
+    needs: docker-build
+    uses: ./.github/workflows/gcp-docker-build-push.yml
+
+  gcp-deploy-latest-to-cloud-run:
+    needs: gcp-docker-build-push
+    uses: ./.github/workflows/gcp-deploy-latest-to-cloud-run.yml
