@@ -129,6 +129,34 @@ roles/serviceusage.serviceUsageAdmin – Enable and manage Google Cloud APIs.
 roles/resourcemanager.projectIamAdmin – Grant IAM roles to other accounts.
 ```
 
+### Grant Roles Using gcloud
+
+Run these commands as a project owner or using an admin account:
+
+```shell
+
+SERVICE_ACCOUNT="e2e-mlops-service-account@YOUR_PROJECT_ID.iam.gserviceaccount.com"
+PROJECT_ID="YOUR_PROJECT_ID"
+
+# Core roles
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/artifactregistry.admin"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/artifactregistry.repoAdmin"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/cloudbuild.connectionAdmin"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/clouddeploy.admin"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/container.admin"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/container.clusterAdmin"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/storage.objectAdmin"
+
+# ML & Data roles
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/aiplatform.admin"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/bigquery.admin"
+
+# Setup roles (optional)
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/serviceusage.serviceUsageAdmin"
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT" --role="roles/resourcemanager.projectIamAdmin"
+
+```
+
 ⚠️ Best Practice: Use a separate admin account for initial setup and keep the CI/CD service account limited to build/deploy roles for security.
 
 
