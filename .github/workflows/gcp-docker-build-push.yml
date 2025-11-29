@@ -24,7 +24,7 @@ jobs:
         id: version
         run: |
           TIMESTAMP=$(date +'%Y-%m-%d-%H-%M-%S')
-          IMAGE_NAME="simple-e2e-mlops-on-gcp-${TIMESTAMP}"
+          IMAGE_NAME="simple-e2e-mlops-on-gcp"
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
