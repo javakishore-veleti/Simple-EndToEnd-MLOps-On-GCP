@@ -5,13 +5,14 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write   # Matches docker-build.yml requirement
+  contents: write   # Needed for docker-build.yml to push tags
+  id-token: write   # Needed for GCP authentication
 
 jobs:
   docker-build:
     uses: ./.github/workflows/docker-build.yml
     with:
-      image_name: "simple-endtoend-mlops-on-gcp"
+      image_name: ${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}
     secrets:
       GCP_CREDENTIALS: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
 
@@ -19,8 +20,9 @@ jobs:
     needs: docker-build
     uses: ./.github/workflows/gcp-docker-build-push.yml
     with:
-      project_id: "packtpub-ai-ml-projects"
-      region: "us-central1"
+      project_id: ${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}
+      region: ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
+      image_name: ${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}
     secrets:
       GCP_CREDENTIALS: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
 
@@ -28,9 +30,9 @@ jobs:
     needs: gcp-docker-build-push
     uses: ./.github/workflows/gcp-deploy-latest-to-cloud-run.yml
     with:
-      project_id: "packtpub-ai-ml-projects"
-      region: "us-central1"
-      image_name: "simple-endtoend-mlops-on-gcp"
-      service_name: "smpl-e2e-mlops-gcp-service"
+      project_id: ${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}
+      region: ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
+      image_name: ${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}
+      service_name: ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }}
     secrets:
       GCP_CREDENTIALS: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
