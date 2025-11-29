@@ -1,0 +1,40 @@
+
+name: Manual Docker Build
+
+on:
+  workflow_dispatch: # Manual trigger only
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Needed to push tags
+
+      - name: Generate timestamp tag
+        id: version
+        run: echo "TAG=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
+
+      - name: Build Docker image
+        run: |
+          IMAGE_NAME="simple-endtoend-mlops-on-gcp"
+          docker build -f devops/dockerBuild/Dockerfile -t $IMAGE_NAME:${TAG} .
+
+      - name: Save image as artifact
+        run: docker save simple-endtoend-mlops-on-gcp:${TAG} | gzip > simple-endtoend-mlops-on-gcp-${TAG}.tar.gz
+
+      - name: Upload image artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-image-${{ env.TAG }}
+          path: simple-endtoend-mlops-on-gcp-${{ env.TAG }}.tar.gz
+
+      - name: Tag the codebase
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git tag $TAG
+          git push origin $TAG

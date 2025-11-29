@@ -1,0 +1,38 @@
+
+name: Manual Docker Push
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Docker image tag (format: YYYY-MM-DD-HH-MM-SS)'
+        required: true
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: docker-image-${{ github.event.inputs.tag }}
+
+      - name: Load Docker image
+        run: docker load < simple-endtoend-mlops-on-gcp-${{ github.event.inputs.tag }}.tar.gz
+
+      # Authenticate to Docker registry using GitHub Secrets
+      - name: Login to Docker Registry
+        run: |
+          echo "${{ secrets.DOCKER_PASSWORD }}" | docker login ${{ secrets.DOCKER_REGISTRY }} -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Tag and Push Docker image
+        run: |
+          IMAGE_NAME="simple-endtoend-mlops-on-gcp"
+          TAG="${{ github.event.inputs.tag }}"
+          REGISTRY="${{ secrets.DOCKER_REGISTRY }}"
+          docker tag $IMAGE_NAME:$TAG $REGISTRY/$IMAGE_NAME:$TAG
+          docker push $REGISTRY/$IMAGE_NAME:$TAG
