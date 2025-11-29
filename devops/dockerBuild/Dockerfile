@@ -12,16 +12,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements file from repo root
-COPY ../../requirements.txt .
+COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code from service folder
-COPY ../../service ./service
-
-# Expose Flask port
-EXPOSE 5052
+COPY service ./service
 
 # Cloud Run expects port 8080
 EXPOSE 8080
