@@ -42,6 +42,8 @@ ML Code → Docker Image → Artifact Registry → (Optional) Cloud Run
   - `SMPL_E2E_MLOPS_GCP_CREDENTIALS` → Service account JSON key.
   - `SMPL_E2E_MLOPS_GCP_PROJECT_ID` → GCP Project ID.
   - `SMPL_E2E_MLOPS_GCP_REGION` → Artifact Registry region.
+  -  SMPL_E2E_MLOPS_IMAGE_NAME → Docker image name.
+  - SMPL_E2E_MLOPS_SERVICE_NAME -> for Cloud Run Deploy (value I provided as -> smpl-e2e-mlops-service )
 
 ## Setup Steps
 

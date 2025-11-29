@@ -31,4 +31,4 @@ ENV PORT=8080 \
     GCP_TABLE="states_parquet"
 
 # Run Flask app
-CMD ["python", "service/main.py"]
+CMD ["python", "-m", "service.main"]
