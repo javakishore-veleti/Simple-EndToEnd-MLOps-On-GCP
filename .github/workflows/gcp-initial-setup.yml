@@ -7,7 +7,7 @@ on:
 jobs:
   gcp-initial-setup:
     runs-on: ubuntu-latest
-    environment: Google Cloud Admin
+    environment: Google Cloud GCP
 
     steps:
       # Step 1: Authenticate with Google Cloud using ADMIN account
