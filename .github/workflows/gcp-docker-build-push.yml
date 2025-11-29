@@ -19,10 +19,14 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Step 2: Generate timestamp tag
-      - name: Generate timestamp tag
+      # Step 2: Generate timestamp and image name
+      - name: Generate timestamp and image name
         id: version
-        run: echo "TAG=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
+        run: |
+          TIMESTAMP=$(date +'%Y-%m-%d-%H-%M-%S')
+          IMAGE_NAME="simple-e2e-mlops-on-gcp-${TIMESTAMP}"
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
       # Step 3: Authenticate with Google Cloud
       - name: Authenticate to Google Cloud
@@ -54,8 +58,7 @@ jobs:
       # Step 6: Build Docker image
       - name: Build Docker image
         run: |
-          IMAGE_NAME="simple-endtoend-mlops-on-gcp"
-          docker build -f devops/dockerBuild/Dockerfile -t $IMAGE_NAME:${TAG} .
+          docker build -f devops/dockerBuild/Dockerfile -t $IMAGE_NAME .
 
       # Step 7: Tag image for Artifact Registry
       - name: Tag image for Artifact Registry
@@ -63,8 +66,7 @@ jobs:
           PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
           REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
           REPO_NAME="smpl-e2e-mlops-gcp"
-          IMAGE_NAME="simple-endtoend-mlops-on-gcp"
-          docker tag $IMAGE_NAME:${TAG} $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:${TAG}
+          docker tag $IMAGE_NAME $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME
 
       # Step 8: Push image to Artifact Registry
       - name: Push image to Artifact Registry
@@ -72,13 +74,12 @@ jobs:
           PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
           REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
           REPO_NAME="smpl-e2e-mlops-gcp"
-          IMAGE_NAME="simple-endtoend-mlops-on-gcp"
-          docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:${TAG}
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME
 
       # Step 9: Tag the codebase in Git
       - name: Tag the codebase
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git tag $TAG
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} $TAG
+          git tag $TIMESTAMP
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} $TIMESTAMP
