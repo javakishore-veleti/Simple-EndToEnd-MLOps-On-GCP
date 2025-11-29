@@ -160,4 +160,69 @@ gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SER
 ⚠️ Best Practice: Use a separate admin account for initial setup and keep the CI/CD service account limited to build/deploy roles for security.
 
 
+```text
+┌────────────────────────────┐
+│ Wrapper Workflow           │
+│ docker_gcp_e2e_all_workflows.yml │
+└───────────────┬────────────┘
+                │
+                ▼
+┌────────────────────────────┐
+│ docker-build.yml           │
+│ - Builds Docker image      │
+│ - Saves artifact           │
+│ - Tags Git commit          │
+└───────────────┬────────────┘
+                │ needs
+                ▼
+┌────────────────────────────┐
+│ gcp-docker-build-push.yml  │
+│ - Auth to GCP              │
+│ - Configures Artifact Reg. │
+│ - Builds & pushes image    │
+└───────────────┬────────────┘
+                │ needs
+                ▼
+┌────────────────────────────┐
+│ gcp-deploy-latest-to-cloud-run.yml │
+│ - Fetches latest tag       │
+│ - Deploys to Cloud Run     │
+│ - Sets timeout & IAM       │
+└────────────────────────────┘
+```
+### GCP Roles Checklist for Service Account
+
+Your service account (e2e-mlops-service-account@PROJECT_ID.iam.gserviceaccount.com) needs:
+
+```text
+roles/run.admin → Deploy to Cloud Run
+roles/iam.serviceAccountUser → Use service accounts
+roles/artifactregistry.admin → Manage Artifact Registry
+roles/cloudbuild.connectionAdmin → Build images
+roles/storage.objectAdmin → Access GCS
+roles/aiplatform.admin → (Optional for Vertex AI)
+roles/resourcemanager.projectIamAdmin → IAM changes
+roles/serviceusage.serviceUsageAdmin → Enable APIs
+```
+
+#### Enable APIs:
+
+```shell
+
+gcloud services enable \
+  run.googleapis.com \
+  artifactregistry.googleapis.com \
+  cloudbuild.googleapis.com \
+  aiplatform.googleapis.com \
+  bigquery.googleapis.com
+
+```
+
+With this setup:
+- Wrapper orchestrates Build → Push → Deploy.
+- Modular workflows are independent and reusable.
+- Secrets keep everything secure.
+- GCP roles ensure permissions for CI/CD.
+
+
  Invoke-WebRequest -Uri "http://localhost:5052/upload-parquet" -Method POST
