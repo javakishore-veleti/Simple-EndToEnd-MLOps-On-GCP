@@ -1,11 +1,18 @@
-
 name: GCP Build Push Deploy
 
 permissions:
-  contents: write  # Required for pushing Git tags
+  contents: write
 
 on:
-  workflow_dispatch: # Manual trigger only
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      image_name:
+        required: false
+        type: string
+    secrets:
+      GCP_CREDENTIALS:
+        required: true
 
 jobs:
   build-push-deploy:
@@ -13,73 +20,70 @@ jobs:
     environment: Google Cloud GCP
 
     steps:
-      # Step 1: Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      # Step 2: Generate timestamp and image name
       - name: Generate timestamp and image name
-        id: version
         run: |
           TIMESTAMP=$(date +'%Y-%m-%d-%H-%M-%S')
-          IMAGE_NAME="simple-e2e-mlops-on-gcp"
+          IMAGE_NAME="${{ inputs.image_name || 'simple-e2e-mlops-on-gcp' }}"
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
           echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
-      # Step 3: Authenticate with Google Cloud
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
 
-      # Step 4: Configure Docker for Artifact Registry
       - name: Configure Docker for Artifact Registry
         run: gcloud auth configure-docker ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev
 
-      # Step 5: Ensure Artifact Registry exists (optional)
       - name: Ensure Artifact Registry exists
         run: |
           PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
           REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
           REPO_NAME="smpl-e2e-mlops-gcp"
-          echo "Checking if repository $REPO_NAME exists in $REGION..."
           if ! gcloud artifacts repositories describe $REPO_NAME --location=$REGION --project=$PROJECT_ID >/dev/null 2>&1; then
-            echo "Repository not found. Attempting to create..."
             gcloud artifacts repositories create $REPO_NAME \
               --repository-format=docker \
               --location=$REGION \
-              --project=$PROJECT_ID || echo "⚠️ Could not create repository (likely due to permissions). Continuing..."
-          else
-            echo "Repository already exists."
+              --project=$PROJECT_ID || echo "⚠️ Could not create repository."
           fi
 
-      # Step 6: Build Docker image
       - name: Build Docker image
-        run: |
-          docker build -f devops/dockerBuild/Dockerfile -t $IMAGE_NAME .
+        run: docker build -f devops/dockerBuild/Dockerfile -t $IMAGE_NAME:$TIMESTAMP .
 
-      # Step 7: Tag image for Artifact Registry
       - name: Tag image for Artifact Registry
         run: |
           PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
           REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
           REPO_NAME="smpl-e2e-mlops-gcp"
-          docker tag $IMAGE_NAME $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME
+          docker tag $IMAGE_NAME:$TIMESTAMP $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$TIMESTAMP
 
-      # Step 8: Push image to Artifact Registry
       - name: Push image to Artifact Registry
         run: |
           PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
           REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
           REPO_NAME="smpl-e2e-mlops-gcp"
-          docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME
+          docker push $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME:$TIMESTAMP
 
-      # Step 9: Tag the codebase in Git
+      - name: Deploy to Cloud Run
+        run: |
+          PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
+          REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
+          SERVICE_NAME="smpl-e2e-mlops-gcp-service"
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/smpl-e2e-mlops-gcp/$IMAGE_NAME:$TIMESTAMP"
+          gcloud run deploy $SERVICE_NAME \
+            --image $IMAGE \
+            --region $REGION \
+            --platform managed \
+            --allow-unauthenticated \
+            --timeout=900s
+
       - name: Tag the codebase
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           git tag $TIMESTAMP
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} $TIMESTAMP

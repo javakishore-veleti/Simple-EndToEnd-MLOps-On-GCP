@@ -7,11 +7,25 @@ on:
 jobs:
   docker-build:
     uses: ./.github/workflows/docker-build.yml
+    with:
+      image_name: "simple-endtoend-mlops-on-gcp"
+    secrets:
+      GCP_CREDENTIALS: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
 
   gcp-docker-build-push:
     needs: docker-build
     uses: ./.github/workflows/gcp-docker-build-push.yml
+    with:
+      project_id: ${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}
+      region: ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
+    secrets:
+      GCP_CREDENTIALS: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
 
   gcp-deploy-latest-to-cloud-run:
     needs: gcp-docker-build-push
     uses: ./.github/workflows/gcp-deploy-latest-to-cloud-run.yml
+    with:
+      project_id: ${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}
+      region: ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
+    secrets:
+      GCP_CREDENTIALS: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}

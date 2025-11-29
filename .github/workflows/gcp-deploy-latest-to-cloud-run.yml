@@ -3,6 +3,17 @@ name: GCP Deploy Latest to Cloud Run
 
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      image_name:
+        required: false
+        type: string
+      service_name:
+        required: false
+        type: string
+    secrets:
+      GCP_CREDENTIALS:
+        required: true
 
 jobs:
   deploy-cloud-run:
@@ -10,20 +21,18 @@ jobs:
     environment: Google Cloud GCP
 
     steps:
-      # Step 1: Authenticate with Google Cloud
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
-          credentials_json: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
 
-      # Step 2: Get Latest Image Tag from Artifact Registry
       - name: Get latest image tag
         id: get-tag
         run: |
           PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
           REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
           REPO_NAME="smpl-e2e-mlops-gcp"
-          IMAGE_NAME="simple-endtoend-mlops-on-gcp"
+          IMAGE_NAME="${{ inputs.image_name || 'simple-endtoend-mlops-on-gcp' }}"
 
           echo "Fetching latest tag for $IMAGE_NAME..."
           LATEST_TAG=$(gcloud artifacts docker tags list $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME \
@@ -31,20 +40,24 @@ jobs:
             --limit=1 \
             --format="value(TAG)")
 
-          echo "Latest tag: $LATEST_TAG"
+          if [ -z "$LATEST_TAG" ]; then
+            echo "❌ No image tags found. Exiting."
+            exit 1
+          fi
+
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
-      # Step 3: Deploy to Cloud Run
-      - name: Deploy Flask App to Cloud Run
+      - name: Deploy to Cloud Run
         run: |
           PROJECT_ID="${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}"
           REGION="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}"
-          SERVICE_NAME="smpl-e2e-mlops-gcp-service"
-          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/smpl-e2e-mlops-gcp/simple-endtoend-mlops-on-gcp:${LATEST_TAG}"
+          SERVICE_NAME="${{ inputs.service_name || 'smpl-e2e-mlops-gcp-service' }}"
+          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/smpl-e2e-mlops-gcp/${{ inputs.image_name || 'simple-endtoend-mlops-on-gcp' }}:${LATEST_TAG}"
 
           echo "Deploying latest image: $IMAGE"
           gcloud run deploy $SERVICE_NAME \
             --image $IMAGE \
             --region $REGION \
             --platform managed \
-            --allow-unauthenticated
+            --allow-unauthenticated \
+            --timeout=900s
