@@ -14,7 +14,6 @@ class ObjectsFactory:
         self.gcp_facade = GcpFacade()
         self.states_dao = StatesDaoImpl()
 
-
     def get_states_dao(self) -> StatesDao:
         return self.states_dao
 

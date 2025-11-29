@@ -1,0 +1,21 @@
+# conda create --name mlops_env python=3.11
+name: python_311_env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.11
+  - flask
+  - pandas
+  - scikit-learn
+  - pytest
+  - overrides
+  - pyarrow
+  - fastparquet
+  - google-cloud-bigquery
+  - google-cloud-storage
+  - jupyter
+  - pip
+  - pip:
+      - gunicorn
+

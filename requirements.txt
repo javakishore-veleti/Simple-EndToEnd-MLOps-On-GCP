@@ -6,4 +6,5 @@ pytest
 pyarrow
 gunicorn
 google-cloud-bigquery
+google-cloud-storage
 overrides
