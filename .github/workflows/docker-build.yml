@@ -8,37 +8,18 @@ permissions:
   contents: write
 
 on:
-  workflow_dispatch:    # Manual trigger
+  workflow_dispatch:
   workflow_call:
-    inputs:
-      image_name:
-        required: false
-        type: string
-      project_id:
-        required: false
-        type: string
-      region:
-        required: false
-        type: string
-      service_name:
-        required: false
-        type: string
     secrets:
       GCP_CREDENTIALS:
         required: true
-      PROJECT_ID:
-        required: false
-      REGION:
-        required: false
       IMAGE_NAME:
-        required: false
-      SERVICE_NAME:
-        required: false
+        required: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    environment: prod
+    environment: Google Cloud GCP
 
     steps:
       - name: Checkout repository
@@ -47,27 +28,21 @@ jobs:
           fetch-depth: 0
 
       - name: Generate timestamp tag
-        id: version
         run: echo "TAG=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
-
-      - name: Set image name (default if not provided)
-        run: |
-          IMAGE_NAME="${{ inputs.image_name || 'simple-endtoend-mlops-on-gcp' }}"
-          echo "IMAGE_NAME=$IMAGE_NAME" >> $GITHUB_ENV
 
       - name: Build Docker image
         run: |
-          docker build -f devops/dockerBuild/Dockerfile \
-            -t ${{ env.IMAGE_NAME }}:${{ env.TAG }} .
+          IMAGE_NAME="${{ secrets.IMAGE_NAME }}"
+          docker build -f devops/dockerBuild/Dockerfile -t $IMAGE_NAME:${TAG} .
 
       - name: Save image as artifact
-        run: docker save ${{ env.IMAGE_NAME }}:${{ env.TAG }} | gzip > ${{ env.IMAGE_NAME }}-${{ env.TAG }}.tar.gz
+        run: docker save ${{ secrets.IMAGE_NAME }}:${TAG} | gzip > ${{ secrets.IMAGE_NAME }}-${TAG}.tar.gz
 
       - name: Upload image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SMPL_E2E_MLOPS_GCP_docker-image-${{ env.TAG }}
-          path: ${{ env.IMAGE_NAME }}-${{ env.TAG }}.tar.gz
+          name: docker-image-${{ env.TAG }}
+          path: ${{ secrets.IMAGE_NAME }}-${{ env.TAG }}.tar.gz
 
       - name: Tag the codebase
         run: |
@@ -75,4 +50,3 @@ jobs:
           git config user.email "github-actions@github.com"
           git tag ${{ env.TAG }}
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} ${{ env.TAG }}
-
