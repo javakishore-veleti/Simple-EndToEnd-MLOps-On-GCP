@@ -4,6 +4,9 @@ name: Docker + GCP E2E All Workflows
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write   # Matches docker-build.yml requirement
+
 jobs:
   docker-build:
     uses: ./.github/workflows/docker-build.yml
