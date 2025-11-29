@@ -3,7 +3,7 @@
 # Prefix Meaning: SMPL_E2E_MLOPS_GCP = Simple End-to-End MLOps on Google Cloud
 # This workflow builds a Docker image, tags it with a timestamp, uploads it as an artifact, and creates a Git tag.
 
-name: SMPL_E2E_MLOPS_GCP_Manual_Docker_Build
+name: Manual Docker Build
 
 permissions:
   contents: write  # Required for pushing Git tags
