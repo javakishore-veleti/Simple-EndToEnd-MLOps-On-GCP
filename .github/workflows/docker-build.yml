@@ -26,7 +26,14 @@ on:
     secrets:
       GCP_CREDENTIALS:
         required: true
-
+      PROJECT_ID:
+        required: false
+      REGION:
+        required: false
+      IMAGE_NAME:
+        required: false
+      SERVICE_NAME:
+        required: false
 
 jobs:
   build:
