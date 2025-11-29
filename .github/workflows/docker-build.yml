@@ -27,7 +27,7 @@ jobs:
         run: docker save simple-endtoend-mlops-on-gcp:${TAG} | gzip > simple-endtoend-mlops-on-gcp-${TAG}.tar.gz
 
       - name: Upload image artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.3.0
         with:
           name: docker-image-${{ env.TAG }}
           path: simple-endtoend-mlops-on-gcp-${{ env.TAG }}.tar.gz
