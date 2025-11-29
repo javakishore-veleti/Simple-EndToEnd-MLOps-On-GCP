@@ -6,15 +6,26 @@ import os
 
 app = Flask(__name__)
 
-objects_factory = ObjectsFactory()
-objects_factory.initialize()
+# objects_factory = ObjectsFactory()
+# objects_factory.initialize()
+
+
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s"
+)
+
+LOGGER = logging.getLogger(__name__)
+
 
 @app.route("/")
 def main():
     req = StatesReq()
     resp = StatesResp()
 
-    objects_factory.get_states_dao().find_all(req, resp)
+    ObjectsFactory.get_instance().get_states_dao().find_all(req, resp)
 
     results = {}
     results.update({"data": resp.__dict__})
