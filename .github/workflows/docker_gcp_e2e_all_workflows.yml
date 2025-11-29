@@ -1,4 +1,3 @@
-
 name: Docker + GCP E2E All Workflows
 
 on:
