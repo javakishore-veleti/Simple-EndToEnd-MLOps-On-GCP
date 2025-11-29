@@ -98,5 +98,38 @@ Speed: Automated pipeline reduces manual steps.
 - GitHub Actions 
 - Python (ML code)
 
+## GCP Service Account Permissions Required
+
+To run this MLOps pipeline and associated GitHub Actions workflows, the service account used for CI/CD must have the following IAM roles:
+Core Roles for Build & Deploy
+
+```text
+roles/artifactregistry.admin – Manage Artifact Registry repositories.
+roles/artifactregistry.repoAdmin – Manage artifacts in repositories.
+roles/cloudbuild.connectionAdmin – Required for Cloud Build integrations.
+roles/clouddeploy.admin – Manage Cloud Deploy resources.
+roles/container.admin – Full control over Kubernetes Engine resources.
+roles/container.clusterAdmin – Create and manage Kubernetes clusters.
+roles/storage.objectAdmin – Read/write access to Cloud Storage objects.
+```
+
+### ML & Data Roles
+
+```text
+roles/aiplatform.admin – Manage Vertex AI resources.
+roles/bigquery.admin – Access and manage BigQuery datasets.
+```
+
+### Setup Roles (One-Time Project Initialization)
+
+If you want the same service account to enable APIs and grant roles automatically, it also needs:
+
+```text
+roles/serviceusage.serviceUsageAdmin – Enable and manage Google Cloud APIs.
+roles/resourcemanager.projectIamAdmin – Grant IAM roles to other accounts.
+```
+
+⚠️ Best Practice: Use a separate admin account for initial setup and keep the CI/CD service account limited to build/deploy roles for security.
+
 
  Invoke-WebRequest -Uri "http://localhost:5052/upload-parquet" -Method POST
