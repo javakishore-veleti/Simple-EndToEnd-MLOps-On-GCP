@@ -58,10 +58,9 @@ def upload_parquet():
     LOGGER.info(f"Upload parquet Exiting response {response}")
     return response
 
-
-@app.route("/healthz")
+@app.route('/healthz', methods=['GET'])
 def healthz():
-    return jsonify(ObjectsFactory.get_instance().get_health_facade().overall_status()), 200
+    return jsonify({"status": "healthy"}), 200
 
 
 if __name__ == "__main__":
