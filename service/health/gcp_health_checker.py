@@ -1,6 +1,6 @@
 
-from health.health_checker import HealthChecker
-from health.health_facade import HealthFacade
+from service.health.health_checker import HealthChecker
+from service.health.health_facade import HealthFacade
 from google.cloud import bigquery, storage
 import logging
 
