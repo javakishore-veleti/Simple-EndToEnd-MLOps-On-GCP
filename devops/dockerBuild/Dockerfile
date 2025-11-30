@@ -25,7 +25,6 @@ EXPOSE 8080
 
 # Environment variables for GCP and app config
 ENV PORT=8080 \
-    GOOGLE_APPLICATION_CREDENTIALS="/app/credentials.json" \
     GCP_BUCKET_NAME="e2e-ml-ops" \
     GCP_DATASET="e2e_mlops_schema" \
     GCP_TABLE="states_parquet"
