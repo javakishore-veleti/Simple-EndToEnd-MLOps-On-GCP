@@ -1,5 +1,5 @@
 
-name: GCP Deploy Latest to Cloud Run
+name: GCP Deploy Latest to Cloud Run with Health Validation
 
 on:
   workflow_dispatch:
@@ -30,7 +30,7 @@ jobs:
             --sort-by=~CREATE_TIME --limit=1 --format="value(TAG)")
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
-      - name: Deploy to Cloud Run
+      - name: Deploy to Cloud Run (initial with min-instances)
         run: |
           IMAGE="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev/${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}/smpl-e2e-mlops-gcp/${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}:${LATEST_TAG}"
           gcloud run deploy ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }} \
@@ -38,4 +38,39 @@ jobs:
             --region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }} \
             --platform managed \
             --allow-unauthenticated \
-            --service-account ${{ secrets.SMPL_E2E_MLOPS_SERVICE_ACCOUNT_EMAIL }}
+            --service-account ${{ secrets.SMPL_E2E_MLOPS_SERVICE_ACCOUNT_EMAIL }} \
+            --min-instances 1 \
+            --max-instances 10 \
+            --concurrency 80
+
+      - name: Wait for Cloud Run readiness
+        run: |
+          echo "Waiting for service to be ready..."
+          until [ "$(gcloud run services describe ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }} \
+            --region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }} \
+            --format="value(status.conditions[?(@.type=='Ready')].status)")" == "True" ]; do
+            sleep 10
+          done
+          echo "Service is ready!"
+
+      - name: Update autoscaling after readiness
+        run: |
+          gcloud run services update ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }} \
+            --region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }} \
+            --max-instances 50 \
+            --concurrency 80 \
+            --min-instances 0  # Optional: remove warm instance for cost optimization
+
+      - name: Verify health endpoint with retries
+        run: |
+          echo "Checking health endpoint..."
+          for i in {1..5}; do
+            if curl -sf https://${{ secrets.SMPL_E2E_MLOPS_SERVICE_URL }}/healthz; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Health check failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Service did not become healthy in time"
+          exit 1

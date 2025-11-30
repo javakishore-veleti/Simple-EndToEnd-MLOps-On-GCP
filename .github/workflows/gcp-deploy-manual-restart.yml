@@ -1,0 +1,60 @@
+
+name: GCP Deploy Manual Restart Cloud Run Service
+
+on:
+  workflow_dispatch:
+    inputs:
+      image_name:
+        description: "Enter the image name (e.g., my-service-image)"
+        required: true
+      image_tag:
+        description: "Enter the image tag (e.g., v1.0.0)"
+        required: true
+
+jobs:
+  restart-cloud-run:
+    runs-on: ubuntu-latest
+    environment: Google Cloud GCP
+
+    steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
+
+      - name: Configure gcloud
+        run: |
+          gcloud config set project ${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}
+          gcloud config set run/region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
+
+      - name: Restart Cloud Run Service with provided image
+        run: |
+          IMAGE="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev/${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}/smpl-e2e-mlops-gcp/${{ github.event.inputs.image_name }}:${{ github.event.inputs.image_tag }}"
+          echo "Restarting Cloud Run service: ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }} with image $IMAGE"
+          gcloud run services update ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }} \
+            --region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }} \
+            --image $IMAGE
+
+      - name: Wait for Cloud Run readiness
+        run: |
+          echo "Waiting for service to be ready..."
+          until [ "$(gcloud run services describe ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }} \
+            --region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }} \
+            --format="value(status.conditions[?(@.type=='Ready')].status)")" == "True" ]; do
+            sleep 10
+          done
+          echo "Service is ready!"
+
+      - name: Verify health endpoint with retries
+        run: |
+          echo "Checking health endpoint..."
+          for i in {1..5}; do
+            if curl -sf https://${{ secrets.SMPL_E2E_MLOPS_SERVICE_URL }}/healthz; then
+              echo "Health check passed!"
+              exit 0
+            fi
+            echo "Health check failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Service did not become healthy in time"
+          exit 1
