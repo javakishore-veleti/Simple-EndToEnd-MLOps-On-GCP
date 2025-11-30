@@ -10,32 +10,18 @@ permissions:
 
 jobs:
   docker-build:
-    environment: Google Cloud GCP
     uses: ./.github/workflows/docker-build.yml
-    secrets:
-      GCP_CREDENTIALS: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
-      IMAGE_NAME: ${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}
+    environment: Google Cloud GCP
+    secrets: inherit
 
   gcp-docker-build-push:
-    environment: Google Cloud GCP
     needs: docker-build
     uses: ./.github/workflows/gcp-docker-build-push.yml
-    secrets:
-      GCP_CREDENTIALS: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
-      PROJECT_ID: ${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}
-      REGION: ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
-      IMAGE_NAME: ${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}
+    environment: Google Cloud GCP
+    secrets: inherit
 
   gcp-deploy-latest-to-cloud-run:
-    environment: Google Cloud GCP
     needs: gcp-docker-build-push
     uses: ./.github/workflows/gcp-deploy-latest-to-cloud-run.yml
-    secrets:
-      GCP_CREDENTIALS: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
-      PROJECT_ID: ${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}
-      REGION: ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
-      IMAGE_NAME: ${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}
-      SERVICE_NAME: ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }}
-      # gcloud iam service-accounts list --filter="displayName:e2e-mlops-service-account" --format="value(email)"
-      SERVICE_ACCOUNT_EMAIL: ${{ secrets.SMPL_E2E_MLOPS_SERVICE_ACCOUNT_EMAIL }}
-
+    environment: Google Cloud GCP
+    secrets: inherit
