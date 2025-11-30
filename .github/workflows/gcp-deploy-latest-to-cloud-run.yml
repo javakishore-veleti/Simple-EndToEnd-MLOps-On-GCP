@@ -11,16 +11,23 @@ jobs:
     environment: Google Cloud GCP
 
     steps:
+      # Checkout repository to avoid empty workspace error
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Authenticate to Google Cloud
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
           credentials_json: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
 
+      # Configure gcloud
       - name: Configure gcloud
         run: |
           gcloud config set project ${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}
           gcloud config set run/region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
 
+      # Get latest image tag from Artifact Registry
       - name: Get latest image tag
         id: get-tag
         run: |
@@ -30,6 +37,7 @@ jobs:
             --sort-by=~CREATE_TIME --limit=1 --format="value(TAG)")
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
+      # Deploy to Cloud Run with initial min-instances
       - name: Deploy to Cloud Run (initial with min-instances)
         run: |
           IMAGE="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev/${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}/smpl-e2e-mlops-gcp/${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}:${LATEST_TAG}"
@@ -43,6 +51,7 @@ jobs:
             --max-instances 10 \
             --concurrency 80
 
+      # Wait for Cloud Run readiness
       - name: Wait for Cloud Run readiness
         run: |
           echo "Waiting for service to be ready..."
@@ -53,6 +62,7 @@ jobs:
           done
           echo "Service is ready!"
 
+      # Update autoscaling after readiness
       - name: Update autoscaling after readiness
         run: |
           gcloud run services update ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }} \
@@ -61,6 +71,7 @@ jobs:
             --concurrency 80 \
             --min-instances 0  # Optional: remove warm instance for cost optimization
 
+      # Verify health endpoint with retries
       - name: Verify health endpoint with retries
         run: |
           echo "Checking health endpoint..."
