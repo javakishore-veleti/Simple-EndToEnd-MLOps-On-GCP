@@ -10,12 +10,14 @@ permissions:
 
 jobs:
   docker-build:
+    environment: Google Cloud GCP
     uses: ./.github/workflows/docker-build.yml
     secrets:
       GCP_CREDENTIALS: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
       IMAGE_NAME: ${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}
 
   gcp-docker-build-push:
+    environment: Google Cloud GCP
     needs: docker-build
     uses: ./.github/workflows/gcp-docker-build-push.yml
     secrets:
@@ -25,6 +27,7 @@ jobs:
       IMAGE_NAME: ${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}
 
   gcp-deploy-latest-to-cloud-run:
+    environment: Google Cloud GCP
     needs: gcp-docker-build-push
     uses: ./.github/workflows/gcp-deploy-latest-to-cloud-run.yml
     secrets:

@@ -14,7 +14,7 @@ on:
 jobs:
   push:
     runs-on: ubuntu-latest
-    environment: prod  # Protected environment
+    environment: Google Cloud GCP
 
     steps:
       - name: Checkout repository
