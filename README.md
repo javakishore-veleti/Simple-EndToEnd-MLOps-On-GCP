@@ -44,6 +44,7 @@ ML Code → Docker Image → Artifact Registry → (Optional) Cloud Run
   - `SMPL_E2E_MLOPS_GCP_REGION` → Artifact Registry region.
   -  SMPL_E2E_MLOPS_IMAGE_NAME → Docker image name.
   - SMPL_E2E_MLOPS_SERVICE_NAME -> for Cloud Run Deploy (value I provided as -> smpl-e2e-mlops-service )
+  - SMPL_E2E_MLOPS_SERVICE_ACCOUNT_EMAIL (  gcloud iam service-accounts list --filter="displayName:e2e-mlops-service-account" --format="value(email)" )
 
 ## Setup Steps
 
