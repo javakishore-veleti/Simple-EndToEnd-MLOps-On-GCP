@@ -59,8 +59,10 @@ def upload_parquet():
     return response
 
 
-# app.run(debug=True, host="0.0.0.0", port=int(os.environ.get("PORT", 5052)))
-# print(__name__)
+@app.route("/healthz")
+def healthz():
+    return jsonify(ObjectsFactory.get_instance().get_health_facade().overall_status()), 200
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
