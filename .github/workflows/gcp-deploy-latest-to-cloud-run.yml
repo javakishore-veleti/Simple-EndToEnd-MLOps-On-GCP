@@ -2,7 +2,6 @@
 name: GCP Deploy Latest to Cloud Run
 
 on:
-  workflow_dispatch:
   workflow_call:
 
 jobs:
@@ -10,16 +9,23 @@ jobs:
     runs-on: ubuntu-latest
     environment: Google Cloud GCP
 
-    permissions:
-      contents: read
-      id-token: write  # Required for OIDC
-
     steps:
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v1
+        with:
+          credentials_json: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
+
+      - name: Configure gcloud
+        run: |
+          gcloud config set project ${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}
+          gcloud config set run/region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
+
       - name: Get latest image tag
         id: get-tag
         run: |
           IMAGE_NAME="${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}"
-          LATEST_TAG=$(gcloud artifacts docker tags list ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev/${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}/smpl-e2e-mlops-gcp/$IMAGE_NAME \
+          LATEST_TAG=$(gcloud artifacts docker tags list \
+            ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev/${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}/smpl-e2e-mlops-gcp/$IMAGE_NAME \
             --sort-by=~CREATE_TIME --limit=1 --format="value(TAG)")
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
@@ -31,5 +37,4 @@ jobs:
             --region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }} \
             --platform managed \
             --allow-unauthenticated \
-            --service-account ${{ secrets.SMPL_E2E_MLOPS_SERVICE_ACCOUNT_EMAIL }} \
-            --update-env-vars CREDENTIALS_SOURCE=gcs,GCS_BUCKET_NAME=e2e-ml-ops
+            --service-account ${{ secrets.SMPL_E2E_MLOPS_SERVICE_ACCOUNT_EMAIL }}
