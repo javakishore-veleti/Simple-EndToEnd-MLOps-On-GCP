@@ -8,6 +8,7 @@ on:
 jobs:
   deploy-cloud-run:
     runs-on: ubuntu-latest
+    environment: Google Cloud GCP
 
     permissions:
       contents: read
