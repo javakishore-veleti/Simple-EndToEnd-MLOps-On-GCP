@@ -56,22 +56,26 @@ jobs:
         run: |
           echo "Waiting for service to be ready..."
           i=0
-          while [ $i -lt 30 ]; do
+          while [ $i -lt 60 ]; do
             STATUS=$(gcloud run services describe ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }} \
               --region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }} \
-              --format="value(status.conditions[?(@.type=='Ready')].status)" | tr -d '[:space:]')
+              --format=json | jq -r '.status.conditions[] | select(.type=="Ready") | .status')
+
+            echo "Current STATUS: $STATUS"
+
             if [ "$STATUS" = "True" ]; then
               echo "Service is ready!"
               exit 0
             fi
+
             echo "Not ready yet, retrying..."
-            sleep 10
+            sleep 2
             i=$((i+1))
           done
+
           echo "Service did not become ready in time"
           exit 1
       
-
       # Update autoscaling after readiness
       - name: Update autoscaling after readiness
         run: |
