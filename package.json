@@ -3,7 +3,8 @@
   "name": "simple-endtoend-mlops-on-gcp",
   "version": "1.0.0",
   "scripts": {
-    "docker:build": "docker build -f devops/dockerBuild/Dockerfile -t simple-endtoend-mlops-on-gcp .",
-    "docker:run": "docker run -p 5052:5052 -v ./credentials.json:/app/credentials.json -e GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json -e GCP_BUCKET_NAME=e2e-ml-ops -e GCP_DATASET=e2e_mlops_schema -e GCP_TABLE=states_parquet simple-endtoend-mlops-on-gcp"
+    "gcp-bucket-upload-creds": "node package_gcp_creds_upload.js",
+    "docker:build" : "docker build -f devops/dockerBuild/Dockerfile -t simple-endtoend-mlops-on-gcp .",
+    "docker:run" : "docker run -p 5052:5052 -v ./credentials.json:/app/credentials.json -e GOOGLE_APPLICATION_CREDENTIALS=/app/credentials.json -e GCP_BUCKET_NAME=e2e-ml-ops -e GCP_DATASET=e2e_mlops_schema -e GCP_TABLE=states_parquet simple-endtoend-mlops-on-gcp"
   }
 }

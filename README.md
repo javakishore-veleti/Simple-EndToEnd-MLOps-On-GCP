@@ -115,6 +115,7 @@ roles/container.clusterAdmin – Create and manage Kubernetes clusters.
 roles/storage.objectAdmin – Read/write access to Cloud Storage objects.
 ```
 
+
 ### ML & Data Roles
 
 ```text
@@ -226,5 +227,17 @@ With this setup:
 - Secrets keep everything secure.
 - GCP roles ensure permissions for CI/CD.
 
+####  How to find the email for your service account
 
- Invoke-WebRequest -Uri "http://localhost:5052/upload-parquet" -Method POST
+In Google Cloud, the service account identifier for authentication is always its email address, not just the display name. The name e2e-mlops-service-account is a friendly label, but the actual identity used by gcloud and GitHub Actions OIDC is something like:
+
+```text
+e2e-mlops-service-account@<PROJECT_ID>.iam.gserviceaccount.com
+```
+
+```shell
+gcloud iam service-accounts list --filter="displayName:e2e-mlops-service-account" --format="value(email)"
+
+```
+
+Invoke-WebRequest -Uri "http://localhost:5052/upload-parquet" -Method POST

@@ -12,8 +12,6 @@ on:
         required: false
         type: string
     secrets:
-      GCP_CREDENTIALS:
-        required: true
       PROJECT_ID:
         required: true
       REGION:
@@ -22,50 +20,50 @@ on:
         required: true
       SERVICE_NAME:
         required: true
+      SERVICE_ACCOUNT_EMAIL:
+        required: true
 
 jobs:
   deploy-cloud-run:
     runs-on: ubuntu-latest
-    environment: Google Cloud GCP
+
+    permissions:
+      contents: read
+      id-token: write  # Required for OIDC
 
     steps:
-      - name: Authenticate to Google Cloud
+      - name: Authenticate to Google Cloud (OIDC)
         uses: google-github-actions/auth@v1
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+          token_format: access_token
+          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
+          service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+
+      - name: Configure gcloud
+        run: |
+          gcloud config set project ${{ secrets.PROJECT_ID }}
+          gcloud config set run/region ${{ secrets.REGION }}
+
+      - name: Set environment variables for app
+        run: |
+          echo "CREDENTIALS_SOURCE=gcs" >> $GITHUB_ENV
+          echo "GCS_BUCKET_NAME=e2e-ml-ops" >> $GITHUB_ENV
 
       - name: Get latest image tag
         id: get-tag
         run: |
-          PROJECT_ID="${{ secrets.PROJECT_ID }}"
-          REGION="${{ secrets.REGION }}"
-          REPO_NAME="smpl-e2e-mlops-gcp"
           IMAGE_NAME="${{ inputs.image_name || secrets.IMAGE_NAME }}"
-
-          echo "Fetching latest tag for $IMAGE_NAME..."
-          LATEST_TAG=$(gcloud artifacts docker tags list $REGION-docker.pkg.dev/$PROJECT_ID/$REPO_NAME/$IMAGE_NAME \
-            --sort-by=~CREATE_TIME \
-            --limit=1 \
-            --format="value(TAG)")
-
-          if [ -z "$LATEST_TAG" ]; then
-            echo "❌ No image tags found. Exiting."
-            exit 1
-          fi
-
+          LATEST_TAG=$(gcloud artifacts docker tags list ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/smpl-e2e-mlops-gcp/$IMAGE_NAME \
+            --sort-by=~CREATE_TIME --limit=1 --format="value(TAG)")
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
       - name: Deploy to Cloud Run
         run: |
-          PROJECT_ID="${{ secrets.PROJECT_ID }}"
-          REGION="${{ secrets.REGION }}"
-          SERVICE_NAME="${{ inputs.service_name || secrets.SERVICE_NAME }}"
-          IMAGE="$REGION-docker.pkg.dev/$PROJECT_ID/smpl-e2e-mlops-gcp/${{ inputs.image_name || secrets.IMAGE_NAME }}:${LATEST_TAG}"
-
-          echo "Deploying latest image: $IMAGE"
-          gcloud run deploy $SERVICE_NAME \
+          IMAGE="${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/smpl-e2e-mlops-gcp/${{ inputs.image_name || secrets.IMAGE_NAME }}:${LATEST_TAG}"
+          gcloud run deploy ${{ secrets.SERVICE_NAME }} \
             --image $IMAGE \
-            --region $REGION \
+            --region ${{ secrets.REGION }} \
             --platform managed \
             --allow-unauthenticated \
-            --timeout=900s
+            --service-account ${{ secrets.SERVICE_ACCOUNT_EMAIL }} \
+            --update-env-vars CREDENTIALS_SOURCE=gcs,GCS_BUCKET_NAME=e2e-ml-ops
