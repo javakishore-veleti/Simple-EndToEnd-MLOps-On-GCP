@@ -2,6 +2,7 @@
 name: GCP Deploy Latest to Cloud Run
 
 on:
+  workflow_dispatch:
   workflow_call:
 
 jobs:
