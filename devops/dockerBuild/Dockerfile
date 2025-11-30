@@ -30,5 +30,6 @@ ENV PORT=8080 \
     GCP_DATASET="e2e_mlops_schema" \
     GCP_TABLE="states_parquet"
 
+ENV PYTHONPATH=/app
 # Run Flask app
 CMD ["python", "-m", "service.main"]

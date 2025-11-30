@@ -30,6 +30,10 @@ jobs:
       - name: Generate timestamp tag
         run: echo "TAG=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
 
+      # Inject credentials.json securely
+      - name: Write GCP credentials to file
+        run: echo "${{ secrets.GCP_CREDENTIALS }}" > credentials.json
+
       - name: Build Docker image
         run: |
           IMAGE_NAME="${{ secrets.IMAGE_NAME }}"
@@ -50,3 +54,8 @@ jobs:
           git config user.email "github-actions@github.com"
           git tag ${{ env.TAG }}
           git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} ${{ env.TAG }}
+
+      # Cleanup credentials file
+      - name: Cleanup credentials file
+        run: rm credentials.json
+

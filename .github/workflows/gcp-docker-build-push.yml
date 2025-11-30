@@ -31,6 +31,10 @@ jobs:
       - name: Generate timestamp
         run: echo "TAG=$(date +'%Y-%m-%d-%H-%M-%S')" >> $GITHUB_ENV
 
+      # Inject credentials.json securely
+      - name: Write GCP credentials to file
+        run: echo "${{ secrets.GCP_CREDENTIALS }}" > credentials.json
+
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
@@ -59,3 +63,7 @@ jobs:
       - name: Push image to Artifact Registry
         run: |
           docker push ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/smpl-e2e-mlops-gcp/${{ secrets.IMAGE_NAME }}:${TAG}
+
+      # Cleanup credentials file
+      - name: Cleanup credentials file
+        run: rm credentials.json
