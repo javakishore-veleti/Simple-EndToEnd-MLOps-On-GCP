@@ -95,7 +95,7 @@ Speed: Automated pipeline reduces manual steps.
 ### Tech Stack
 
 - Google Cloud Platform 
-- Artifact Registry 
+- Artifact Registry (smpl-e2e-mlops-gcp is the repository name / Location: us-east1 / Package: simple-e2e-mlops-on-gcp  )
 - Docker 
 - GitHub Actions 
 - Python (ML code)

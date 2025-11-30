@@ -18,7 +18,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code from service folder
-COPY service ./service
+COPY . .
 
 # Cloud Run expects port 8080
 EXPOSE 8080
