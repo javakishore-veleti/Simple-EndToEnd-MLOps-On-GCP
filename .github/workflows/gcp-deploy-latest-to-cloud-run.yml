@@ -15,23 +15,6 @@ jobs:
       id-token: write  # Required for OIDC
 
     steps:
-      - name: Authenticate to Google Cloud (OIDC)
-        uses: google-github-actions/auth@v1
-        with:
-          token_format: access_token
-          workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.SMPL_E2E_MLOPS_SERVICE_ACCOUNT_EMAIL }}
-
-      - name: Configure gcloud
-        run: |
-          gcloud config set project ${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}
-          gcloud config set run/region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
-
-      - name: Set environment variables for app
-        run: |
-          echo "CREDENTIALS_SOURCE=gcs" >> $GITHUB_ENV
-          echo "GCS_BUCKET_NAME=e2e-ml-ops" >> $GITHUB_ENV
-
       - name: Get latest image tag
         id: get-tag
         run: |
