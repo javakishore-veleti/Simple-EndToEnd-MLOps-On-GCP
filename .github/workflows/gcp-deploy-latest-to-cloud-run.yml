@@ -4,24 +4,6 @@ name: GCP Deploy Latest to Cloud Run
 on:
   workflow_dispatch:
   workflow_call:
-    inputs:
-      image_name:
-        required: false
-        type: string
-      service_name:
-        required: false
-        type: string
-    secrets:
-      PROJECT_ID:
-        required: true
-      REGION:
-        required: true
-      IMAGE_NAME:
-        required: true
-      SERVICE_NAME:
-        required: true
-      SERVICE_ACCOUNT_EMAIL:
-        required: true
 
 jobs:
   deploy-cloud-run:
@@ -37,12 +19,12 @@ jobs:
         with:
           token_format: access_token
           workload_identity_provider: ${{ secrets.WIF_PROVIDER }}
-          service_account: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+          service_account: ${{ secrets.SMPL_E2E_MLOPS_SERVICE_ACCOUNT_EMAIL }}
 
       - name: Configure gcloud
         run: |
-          gcloud config set project ${{ secrets.PROJECT_ID }}
-          gcloud config set run/region ${{ secrets.REGION }}
+          gcloud config set project ${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}
+          gcloud config set run/region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}
 
       - name: Set environment variables for app
         run: |
@@ -52,18 +34,18 @@ jobs:
       - name: Get latest image tag
         id: get-tag
         run: |
-          IMAGE_NAME="${{ inputs.image_name || secrets.IMAGE_NAME }}"
-          LATEST_TAG=$(gcloud artifacts docker tags list ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/smpl-e2e-mlops-gcp/$IMAGE_NAME \
+          IMAGE_NAME="${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}"
+          LATEST_TAG=$(gcloud artifacts docker tags list ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev/${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}/smpl-e2e-mlops-gcp/$IMAGE_NAME \
             --sort-by=~CREATE_TIME --limit=1 --format="value(TAG)")
           echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
       - name: Deploy to Cloud Run
         run: |
-          IMAGE="${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/smpl-e2e-mlops-gcp/${{ inputs.image_name || secrets.IMAGE_NAME }}:${LATEST_TAG}"
-          gcloud run deploy ${{ secrets.SERVICE_NAME }} \
+          IMAGE="${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev/${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}/smpl-e2e-mlops-gcp/${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}:${LATEST_TAG}"
+          gcloud run deploy ${{ secrets.SMPL_E2E_MLOPS_SERVICE_NAME }} \
             --image $IMAGE \
-            --region ${{ secrets.REGION }} \
+            --region ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }} \
             --platform managed \
             --allow-unauthenticated \
-            --service-account ${{ secrets.SERVICE_ACCOUNT_EMAIL }} \
+            --service-account ${{ secrets.SMPL_E2E_MLOPS_SERVICE_ACCOUNT_EMAIL }} \
             --update-env-vars CREDENTIALS_SOURCE=gcs,GCS_BUCKET_NAME=e2e-ml-ops

@@ -7,15 +7,6 @@ permissions:
 on:
   workflow_dispatch:
   workflow_call:
-    secrets:
-      GCP_CREDENTIALS:
-        required: true
-      PROJECT_ID:
-        required: true
-      REGION:
-        required: true
-      IMAGE_NAME:
-        required: true
 
 jobs:
   build-push:
@@ -33,36 +24,36 @@ jobs:
 
       # Inject credentials.json securely
       - name: Write GCP credentials to file
-        run: echo "${{ secrets.GCP_CREDENTIALS }}" > credentials.json
+        run: echo "${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}" > credentials.json
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v1
         with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+          credentials_json: ${{ secrets.SMPL_E2E_MLOPS_GCP_CREDENTIALS }}
 
       - name: Configure Docker for Artifact Registry
-        run: gcloud auth configure-docker ${{ secrets.REGION }}-docker.pkg.dev
+        run: gcloud auth configure-docker ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev
 
       - name: Ensure Artifact Registry exists
         run: |
-          if ! gcloud artifacts repositories describe smpl-e2e-mlops-gcp --location=${{ secrets.REGION }} --project=${{ secrets.PROJECT_ID }} >/dev/null 2>&1; then
+          if ! gcloud artifacts repositories describe smpl-e2e-mlops-gcp --location=${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }} --project=${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }} >/dev/null 2>&1; then
             gcloud artifacts repositories create smpl-e2e-mlops-gcp \
               --repository-format=docker \
-              --location=${{ secrets.REGION }} \
-              --project=${{ secrets.PROJECT_ID }} || echo "⚠️ Could not create repository."
+              --location=${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }} \
+              --project=${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }} || echo "⚠️ Could not create repository."
           fi
 
       - name: Build Docker image
-        run: docker build -f devops/dockerBuild/Dockerfile -t ${{ secrets.IMAGE_NAME }}:${TAG} .
+        run: docker build -f devops/dockerBuild/Dockerfile -t ${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}:${TAG} .
 
       - name: Tag image for Artifact Registry
         run: |
-          docker tag ${{ secrets.IMAGE_NAME }}:${TAG} \
-          ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/smpl-e2e-mlops-gcp/${{ secrets.IMAGE_NAME }}:${TAG}
+          docker tag ${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}:${TAG} \
+          ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev/${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}/smpl-e2e-mlops-gcp/${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}:${TAG}
 
       - name: Push image to Artifact Registry
         run: |
-          docker push ${{ secrets.REGION }}-docker.pkg.dev/${{ secrets.PROJECT_ID }}/smpl-e2e-mlops-gcp/${{ secrets.IMAGE_NAME }}:${TAG}
+          docker push ${{ secrets.SMPL_E2E_MLOPS_GCP_REGION }}-docker.pkg.dev/${{ secrets.SMPL_E2E_MLOPS_GCP_PROJECT_ID }}/smpl-e2e-mlops-gcp/${{ secrets.SMPL_E2E_MLOPS_IMAGE_NAME }}:${TAG}
 
       # Cleanup credentials file
       - name: Cleanup credentials file
