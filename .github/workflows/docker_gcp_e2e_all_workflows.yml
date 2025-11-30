@@ -11,17 +11,14 @@ permissions:
 jobs:
   docker-build:
     uses: ./.github/workflows/docker-build.yml
-    environment: Google Cloud GCP
     secrets: inherit
 
   gcp-docker-build-push:
     needs: docker-build
     uses: ./.github/workflows/gcp-docker-build-push.yml
-    environment: Google Cloud GCP
     secrets: inherit
 
   gcp-deploy-latest-to-cloud-run:
     needs: gcp-docker-build-push
     uses: ./.github/workflows/gcp-deploy-latest-to-cloud-run.yml
-    environment: Google Cloud GCP
     secrets: inherit
